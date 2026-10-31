@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="te">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>రావులమ్మ ఫుడ్ డెలివరీ</title>
+    <style>
+        body { font-family: sans-serif; margin: 0; padding: 0; background: #fdf5e6; }
+        .header { background: #8b0000; color: white; padding: 15px; text-align: center; }
+        .banner { background: #d2691e; color: white; padding: 10px; text-align: center; font-weight: bold; font-size: 14px; }
+        .item-list { padding: 15px; }
+        .item { background: white; margin-bottom: 10px; padding: 15px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); display: flex; justify-content: space-between; align-items: center; }
+        .item-name { font-weight: bold; color: #8b0000; }
+        .item-price { color: #555; }
+        .btn-add { background: #28a745; color: white; border: none; padding: 8px 20px; border-radius: 5px; cursor: pointer; font-weight: bold; font-size: 14px; }
+        .qty-control { display: flex; align-items: center; gap: 10px; }
+        .qty-btn { background: #8b0000; color: white; border: none; width: 30px; height: 30px; border-radius: 5px; font-weight: bold; cursor: pointer; font-size: 16px; }
+        .qty-num { font-weight: bold; font-size: 16px; min-width: 20px; text-align: center; }
+        .cart-section { background: white; padding: 20px; margin: 15px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
+        .qr-section { text-align: center; display: none; margin-top: 20px; padding: 15px; border: 2px solid #8b0000; border-radius: 8px; background: white; margin: 15px; }
+        input[type=number] { padding: 10px; width: 90%; margin: 10px 0; border: 1px solid #ccc; border-radius: 5px; font-size: 16px; text-align: center; }
+        .whatsapp-btn { background: #25D366; color: white; padding: 12px; border: none; border-radius: 5px; width: 100%; font-size: 16px; font-weight: bold; margin-top: 10px; cursor: pointer; }
+        .whatsapp-btn:disabled { background: #ccc; cursor: not-allowed; }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <h2 style="margin:0;">రావులమ్మ ఫుడ్ డెలివరీ</h2>
+        <p style="margin:5px 0 0 0; font-size:12px;">📍 శాంతి నగర్ 10వ రోడ్డు, స్టేట్ బ్యాంక్ ఎదురుగా, ఏలూరు - 534007</p>
+    </div>
+    
+    <div class="banner">
+        🛵 హోమ్ డెలివరీ ఛార్జీ కేవలం ₹20 మాత్రమే
+    </div>
+
+    <div class="item-list" id="menu">
+        <!-- జావాస్క్రిప్ట్ ద్వారా మెను లోడ్ అవుతుంది -->
+    </div>
+
+    <div class="cart-section" id="cart" style="display:none;">
+        <h3 style="color:#8b0000; text-align:center;">మీ ఆర్డర్ వివరాలు</h3>
+        <div id="cartItemsList"></div>
+        <hr style="border:0; border-top:1px solid #ddd; margin:10px 0;">
+        <p>టిఫిన్ల ధర: ₹<span id="foodTotal">0</span></p>
+        <p>డెలివరీ ఛార్జీ: ₹20</p>
+        <h3 style="color:#d2691e;">మొత్తం చెల్లించాల్సిన బిల్లు: ₹<span id="finalTotal">0</span></h3>
+        <button class="btn-add" style="width:100%; padding:12px; font-size:16px;" onclick="showPayment()">చెల్లించండి & ఆర్డర్ చేయండి</button>
+    </div>
+
+    <div class="qr-section" id="paymentSection">
+        <h3 style="color:#8b0000;">ఈ క్యూఆర్ కోడ్ స్కాన్ చేసి చెల్లించండి</h3>
+        <p style="font-size:12px; color:gray;">(బిల్లు అమౌంట్ ఆటోమేటిక్‌గా లాక్ చేయబడింది)</p>
+        
+        <img id="qrImage" src="" alt="UPI QR Code" style="width:200px; height:200px; margin-bottom:10px;">
+        
+        <h4 style="margin-top:20px; color:#d2691e;">చెల్లింపు పూర్తయ్యాక, 12 అంకెల UTR నంబర్ ఇక్కడ నమోదు చేయండి</h4>
+        <input type="number" id="utrInput" placeholder="12 అంకెల UTR / నంబర్" onkeyup="verifyUTR()">
+        <p id="utrMessage" style="color:red; font-size:12px;">దయచేసి 12 అంకెలు సరిగ్గా నమోదు చేయండి</p>
+        
+        <button id="whatsappBtn" class="whatsapp-btn" disabled onclick="sendOrder()">వాట్సాప్‌లో ఆర్డర్ కన్ఫర్మ్ చేయండి</button>
+    </div>
+
+    <script>
+        const menuItems = [
+            { id: 1, name: "ఆపాలు", price: 40 },
+            { id: 2, name: "ఇడ్లీ", price: 40 },
+            { id: 3, name: "ఎగ్ దోశ", price: 60 },
+            { id: 4, name: "పరోటా", price: 60 },
+            { id: 5, name: "చపాతీ", price: 50 },
+            { id: 6, name: "ఉల్లి పెసరట్టు", price: 60 },
+            { id: 7, name: "రవ్వ దోశ", price: 60 },
+            { id: 8, name: "ఉల్లి దోశ", price: 50 },
+            { id: 9, name: "కారం దోశ", price: 50 },
+            { id: 10, name: "ప్లెయిన్ దోశ", price: 50 },
+            { id: 11, name: "ఎగ్ చపాతీ", price: 80 },
+            { id: 12, name: "ఎగ్ పరోటా", price: 80 },
+            { id: 13, name: "ఊతప్పం", price: 60 },
+            { id: 14, name: "ఆమ్లెట్ (డబుల్ ఎగ్)", price: 40 }
+        ];
+
+        let cart = {};
+
+        function loadMenu() {
+            let menuHtml = "";
+            menuItems.forEach(item => {
+                let qty = cart[item.id] ? cart[item.id].qty : 0;
+                let actionHtml = "";
+                
+                if (qty === 0) {
+                    actionHtml = `<button class="btn-add" onclick="changeQty(${item.id}, 1)">ADD</button>`;
+                } else {
+                    actionHtml = `
+                        <div class="qty-control">
+                            <button class="qty-btn" onclick="changeQty(${item.id}, -1)">-</button>
+                            <span class="qty-num">${qty}</span>
+                            <button class="qty-btn" onclick="changeQty(${item.id}, 1)">+</button>
+                        </div>
+                    `;
+                }
+
+                menuHtml += `
+                    <div class="item">
+                        <div>
+                            <div class="item-name">${item.name}</div>
+                            <div class="item-price">₹${item.price}</div>
+                        </div>
+                        <div>${actionHtml}</div>
+                    </div>
+                `;
+            });
+            document.getElementById("menu").innerHTML = menuHtml;
+            updateCartDisplay();
+        }
+
+        function changeQty(itemId, change) {
+            let item = menuItems.find(i => i.id === itemId);
+            if (!cart[itemId]) {
+                if (change > 0) {
+                    cart[itemId] = { name: item.name, price: item.price, qty: 1 };
+                }
+            } else {
+                cart[itemId].qty += change;
+                if (cart[itemId].qty <= 0) {
+                    delete cart[itemId];
+                }
+            }
+            loadMenu();
+        }
+
+        function updateCartDisplay() {
+            let cartKeys = Object.keys(cart);
+            let cartSection = document.getElementById("cart");
+            
+            if (cartKeys.length === 0) {
+                cartSection.style.display = "none";
+                document.getElementById("paymentSection").style.display = "none";
+                return;
+            }
+
+            cartSection.style.display = "block";
+            let foodTotal = 0;
+            let listHtml = "";
+
+            cartKeys.forEach(key => {
+                let cartItem = cart[key];
+                let itemCost = cartItem.price * cartItem.qty;
+                foodTotal += itemCost;
+                listHtml += `<div style="display:flex; justify-content:space-between; margin:5px 0; font-size:14px;"><span>${cartItem.name} (×${cartItem.qty})</span> <span>₹${itemCost}</span></div>`;
+            });
+
+            document.getElementById("cartItemsList").innerHTML = listHtml;
+            document.getElementById("foodTotal").innerText = foodTotal;
+            document.getElementById("finalTotal").innerText = foodTotal + 20;
+        }
+
+        function showPayment() {
+            let foodTotal = 0;
+            Object.keys(cart).forEach(key => {
+                foodTotal += cart[key].price * cart[key].qty;
+            });
+            let finalAmt = foodTotal + 20;
+            let upiString = `upi://pay?pa=paytm.s38kyb3@pty&pn=Ravulamma%20Food&am=${finalAmt}&cu=INR&mam=${finalAmt}`;
+            let qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(upiString)}`;
+            
+            document.getElementById("qrImage").src = qrUrl;
+            document.getElementById("paymentSection").style.display = "block";
+            window.scrollTo(0, document.body.scrollHeight);
+        }
+
+        function verifyUTR() {
+            let utrVal = document.getElementById("utrInput").value;
+            let btn = document.getElementById("whatsappBtn");
+            let msg = document.getElementById("utrMessage");
+            
+            if (utrVal.length === 12) {
+                btn.disabled = false;
+                btn.style.opacity = "1";
+                msg.style.color = "green";
+                msg.innerText = "UTR నంబర్ సరిగ్గా ఉంది, ఆర్డర్ కన్ఫర్మ్ చేయండి.";
+            } else {
+                btn.disabled = true;
+                btn.style.opacity = "0.5";
+                msg.style.color = "red";
+                msg.innerText = "దయచేసి 12 అంకెలు సరిగ్గా నమోదు చేయండి.";
+            }
+        }
+
+        function sendOrder() {
+            let foodTotal = 0;
+            let orderSummary = "";
+            Object.keys(cart).forEach(key => {
+                let item = cart[key];
+                foodTotal += item.price * item.qty;
+                orderSummary += `- ${item.name} (×${item.qty}) = ₹${item.price * item.qty}\n`;
+            });
+            let finalAmt = foodTotal + 20;
+            let utrVal = document.getElementById("utrInput").value;
+            
+            let text = `నమస్కారం సార్, కొత్త ఆర్డర్ వచ్చింది!\n\n${orderSummary}\nటిఫిన్ల మొత్తం: ₹${foodTotal}\nడెలివరీ ఛార్జీ: ₹20\nమొత్తం బిల్లు: ₹${finalAmt}\nUTR నంబర్: ${utrVal}`;
+            let whatsappUrl = `https://wa.me/918340830533?text=${encodeURIComponent(text)}`;
+            window.location.href = whatsappUrl;
+        }
+
+        window.onload = loadMenu;
+    </script>
+</body>
+</html>
