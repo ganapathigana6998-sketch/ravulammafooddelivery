@@ -1,0 +1,2070 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>RAVULAMMA FOOD DELIVERY</title>
+  <!-- Leaflet CSS for Interactive Map -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --royal-red: #8B0000;
+      --bright-red: #D32F2F;
+      --golden-yellow: #FFC107;
+      --discount-blue: #1976D2;
+      --discount-bg: #E3F2FD;
+      --veg-green: #0F8A43;
+      --nonveg-red: #B71C1C;
+      --bg-gray: #F4F5F7;
+      --card-bg: #FFFFFF;
+      --text-dark: #1C1C1C;
+      --text-muted: #686B78;
+      --border-light: #E8E8E8;
+      --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.06);
+      --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.12);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      background-color: var(--bg-gray);
+      color: var(--text-dark);
+      padding-bottom: 140px;
+      max-width: 520px;
+      margin: 0 auto;
+      min-height: 100vh;
+      position: relative;
+      box-shadow: 0 0 24px rgba(0,0,0,0.08);
+    }
+
+    /* 1. TOP HEADER & BRANDING */
+    .top-location-bar {
+      background: #1C1C1C;
+      color: #FFFFFF;
+      padding: 10px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 600;
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+      border-bottom: 1px solid rgba(255, 193, 7, 0.25);
+    }
+
+    .loc-left {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+    }
+
+    .loc-pin {
+      color: var(--golden-yellow);
+      font-size: 15px;
+      flex-shrink: 0;
+    }
+
+    .loc-text {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .loc-distance-pill {
+      background: rgba(255, 193, 7, 0.18);
+      color: var(--golden-yellow);
+      padding: 2px 7px;
+      border-radius: 10px;
+      font-size: 11px;
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+
+    .brand-header {
+      background: linear-gradient(135deg, var(--royal-red) 0%, #5e0000 100%);
+      padding: 20px 16px;
+      text-align: center;
+      border-bottom: 3px solid var(--golden-yellow);
+    }
+
+    .brand-title {
+      color: #FFFFFF;
+      font-size: 28px;
+      font-weight: 900;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      line-height: 1.1;
+      text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+    }
+
+    .brand-subtitle {
+      color: var(--golden-yellow);
+      font-size: 13px;
+      font-weight: 800;
+      letter-spacing: 4px;
+      text-transform: uppercase;
+      margin-top: 4px;
+    }
+
+    /* SHOP CLOSED BANNER & RADIUS WARNING BANNER */
+    .status-banner {
+      display: none;
+      padding: 12px 16px;
+      font-size: 13px;
+      font-weight: 700;
+      text-align: center;
+    }
+
+    .status-banner.closed {
+      display: block;
+      background: #FFEBEE;
+      color: #B71C1C;
+      border-bottom: 2px solid #EF5350;
+    }
+
+    .status-banner.geofence-error {
+      display: block;
+      background: #FFF3E0;
+      color: #E65100;
+      border-bottom: 2px solid #FF9800;
+    }
+
+    /* 3. STICKY SEARCH & CATEGORY FILTER BAR */
+    .sticky-controls {
+      position: sticky;
+      top: 39px;
+      z-index: 950;
+      background: var(--card-bg);
+      padding: 12px 16px;
+      box-shadow: var(--shadow-sm);
+      border-bottom: 1px solid var(--border-light);
+    }
+
+    .search-box {
+      position: relative;
+      width: 100%;
+      margin-bottom: 10px;
+    }
+
+    .search-input {
+      width: 100%;
+      padding: 11px 36px 11px 38px;
+      border: 1.5px solid #DCDFE6;
+      border-radius: 10px;
+      font-size: 14px;
+      font-weight: 500;
+      background: #F9FAFB;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .search-input:focus {
+      border-color: var(--royal-red);
+      background: #FFF;
+    }
+
+    .search-icon {
+      position: absolute;
+      left: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-muted);
+      font-size: 15px;
+    }
+
+    .clear-search {
+      position: absolute;
+      right: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-muted);
+      font-size: 16px;
+      cursor: pointer;
+      display: none;
+    }
+
+    .filter-pills {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+    }
+
+    .filter-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 7px 14px;
+      border-radius: 20px;
+      border: 1.5px solid #DCDFE6;
+      background: #FFFFFF;
+      color: var(--text-dark);
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.2s;
+    }
+
+    .filter-pill.active {
+      background: #FFF8E1;
+      border-color: var(--royal-red);
+      color: var(--royal-red);
+    }
+
+    /* VEG / NON-VEG STANDARD ICONS */
+    .diet-icon {
+      width: 14px;
+      height: 14px;
+      border: 1.5px solid;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 2px;
+      flex-shrink: 0;
+    }
+
+    .diet-icon.veg {
+      border-color: var(--veg-green);
+    }
+
+    .diet-icon.veg::after {
+      content: '';
+      width: 7px;
+      height: 7px;
+      background: var(--veg-green);
+      border-radius: 50%;
+    }
+
+    .diet-icon.nonveg {
+      border-color: var(--nonveg-red);
+    }
+
+    .diet-icon.nonveg::after {
+      content: '';
+      width: 0;
+      height: 0;
+      border-left: 4px solid transparent;
+      border-right: 4px solid transparent;
+      border-bottom: 7px solid var(--nonveg-red);
+    }
+
+    /* 4. DYNAMIC MENU ITEM CARDS */
+    .menu-container {
+      padding: 12px 16px;
+    }
+
+    .menu-card {
+      background: var(--card-bg);
+      border-radius: 16px;
+      padding: 16px;
+      margin-bottom: 14px;
+      display: flex;
+      justify-content: space-between;
+      gap: 14px;
+      box-shadow: var(--shadow-sm);
+      border: 1px solid var(--border-light);
+    }
+
+    .menu-left {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .badge-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 6px;
+    }
+
+    .bestseller-badge {
+      background: linear-gradient(90deg, #FFF8E1, #FFECB3);
+      color: #B71C1C;
+      border: 1px solid #FFD54F;
+      font-size: 11px;
+      font-weight: 800;
+      padding: 2px 7px;
+      border-radius: 4px;
+    }
+
+    .item-name {
+      font-size: 16px;
+      font-weight: 800;
+      color: var(--text-dark);
+      margin-bottom: 4px;
+    }
+
+    .price-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 4px;
+    }
+
+    .selling-price {
+      font-size: 15px;
+      font-weight: 800;
+      color: var(--text-dark);
+    }
+
+    .mrp-price {
+      font-size: 13px;
+      color: var(--text-muted);
+      text-decoration: line-through;
+      font-weight: 500;
+    }
+
+    .discount-tag {
+      display: inline-block;
+      background: var(--discount-bg);
+      color: var(--discount-blue);
+      font-size: 11px;
+      font-weight: 800;
+      padding: 2px 6px;
+      border-radius: 4px;
+      margin-bottom: 8px;
+    }
+
+    .item-desc {
+      font-size: 12.5px;
+      color: var(--text-muted);
+      line-height: 1.4;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    .menu-right {
+      position: relative;
+      width: 118px;
+      flex-shrink: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .item-img {
+      width: 118px;
+      height: 108px;
+      border-radius: 12px;
+      object-fit: cover;
+      border: 1px solid var(--border-light);
+      background: #eee;
+    }
+
+    .item-img.out-of-stock {
+      filter: grayscale(100%);
+      opacity: 0.65;
+    }
+
+    .action-box {
+      margin-top: -16px;
+      z-index: 2;
+      width: 96px;
+      height: 34px;
+    }
+
+    .btn-add {
+      width: 100%;
+      height: 100%;
+      background: #FFFFFF;
+      color: var(--royal-red);
+      border: 1.5px solid var(--royal-red);
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 800;
+      cursor: pointer;
+      box-shadow: 0 2px 6px rgba(139, 0, 0, 0.18);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+    }
+
+    .qty-stepper {
+      width: 100%;
+      height: 100%;
+      background: var(--royal-red);
+      color: #FFFFFF;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 8px;
+      font-size: 14px;
+      font-weight: 800;
+      box-shadow: 0 2px 6px rgba(139, 0, 0, 0.28);
+    }
+
+    .qty-btn {
+      background: none;
+      border: none;
+      color: #FFFFFF;
+      font-size: 17px;
+      font-weight: 800;
+      cursor: pointer;
+      width: 24px;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .sold-out-badge {
+      width: 100%;
+      height: 100%;
+      background: #ECEFF1;
+      color: #607D8B;
+      border: 1px solid #CFD8DC;
+      border-radius: 8px;
+      font-size: 11px;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-transform: uppercase;
+    }
+
+    /* 5. FLOATING CART BAR */
+    .floating-cart-wrap {
+      position: fixed;
+      bottom: 62px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 100%;
+      max-width: 520px;
+      padding: 0 12px;
+      z-index: 980;
+      display: none;
+    }
+
+    .savings-strip {
+      background: #E3F2FD;
+      color: #0D47A1;
+      font-size: 12px;
+      font-weight: 800;
+      text-align: center;
+      padding: 5px 10px;
+      border-radius: 10px 10px 0 0;
+      border: 1px solid #BBDEFB;
+      border-bottom: none;
+    }
+
+    .floating-cart-bar {
+      background: var(--royal-red);
+      color: #FFFFFF;
+      padding: 13px 16px;
+      border-radius: 0 0 12px 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: var(--shadow-md);
+      cursor: pointer;
+    }
+
+    .cart-left-info {
+      font-size: 14px;
+      font-weight: 800;
+    }
+
+    .cart-continue-btn {
+      background: var(--golden-yellow);
+      color: #1C1C1C;
+      padding: 7px 14px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 800;
+      border: none;
+      cursor: pointer;
+    }
+
+    /* 7. BOTTOM NAVIGATION BAR */
+    .bottom-nav {
+      position: fixed;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 100%;
+      max-width: 520px;
+      height: 58px;
+      background: #FFFFFF;
+      border-top: 1px solid var(--border-light);
+      display: flex;
+      z-index: 990;
+    }
+
+    .nav-tab {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 2px;
+      color: var(--text-muted);
+      font-size: 11px;
+      font-weight: 700;
+      cursor: pointer;
+      border: none;
+      background: none;
+    }
+
+    .nav-tab.active {
+      color: var(--royal-red);
+    }
+
+    .nav-icon {
+      font-size: 18px;
+    }
+
+    /* MODALS & DRAWERS */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.6);
+      z-index: 2000;
+      display: none;
+      align-items: flex-end;
+      justify-content: center;
+    }
+
+    .modal-overlay.open {
+      display: flex;
+    }
+
+    .bottom-sheet {
+      width: 100%;
+      max-width: 520px;
+      max-height: 92vh;
+      background: #FFFFFF;
+      border-radius: 20px 20px 0 0;
+      overflow-y: auto;
+      padding: 18px 16px 28px;
+      animation: slideUp 0.22s ease-out;
+    }
+
+    @keyframes slideUp {
+      from { transform: translateY(100%); }
+      to { transform: translateY(0); }
+    }
+
+    .sheet-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--border-light);
+      margin-bottom: 14px;
+    }
+
+    .sheet-title {
+      font-size: 17px;
+      font-weight: 800;
+    }
+
+    .close-btn {
+      background: #F0F2F5;
+      border: none;
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    /* LOCATION MODAL */
+    .add-address-primary-btn {
+      width: 100%;
+      padding: 13px 14px;
+      background: #FFF8E1;
+      border: 1.5px dashed var(--royal-red);
+      color: var(--royal-red);
+      border-radius: 10px;
+      font-size: 14px;
+      font-weight: 800;
+      text-align: left;
+      cursor: pointer;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .section-label {
+      font-size: 11px;
+      font-weight: 800;
+      color: var(--text-muted);
+      letter-spacing: 0.8px;
+      text-transform: uppercase;
+      margin-bottom: 10px;
+    }
+
+    .saved-addr-card {
+      border: 1.5px solid var(--border-light);
+      border-radius: 12px;
+      padding: 12px;
+      margin-bottom: 10px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .saved-addr-card.selected {
+      border-color: var(--royal-red);
+      background: #FFFDF9;
+    }
+
+    .addr-card-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 4px;
+    }
+
+    .addr-tag-badge {
+      font-size: 12px;
+      font-weight: 800;
+      color: var(--royal-red);
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .addr-km-badge {
+      font-size: 11px;
+      font-weight: 700;
+      padding: 2px 7px;
+      border-radius: 6px;
+      background: #F0F2F5;
+    }
+
+    .addr-km-badge.out-of-range {
+      background: #FFEBEE;
+      color: #B71C1C;
+    }
+
+    /* MAP & ADD ADDRESS FORM */
+    .map-wrapper {
+      position: relative;
+      width: 100%;
+      height: 210px;
+      border-radius: 12px;
+      overflow: hidden;
+      border: 1px solid #DCDFE6;
+      margin-bottom: 12px;
+    }
+
+    #leafletMap {
+      width: 100%;
+      height: 100%;
+    }
+
+    .map-hint-pill {
+      position: absolute;
+      top: 8px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(28, 28, 28, 0.85);
+      color: #FFF;
+      font-size: 11px;
+      font-weight: 600;
+      padding: 4px 10px;
+      border-radius: 20px;
+      z-index: 500;
+      white-space: nowrap;
+    }
+
+    .use-gps-floating-btn {
+      position: absolute;
+      bottom: 10px;
+      right: 10px;
+      z-index: 500;
+      background: #FFFFFF;
+      color: var(--royal-red);
+      border: 1.5px solid var(--royal-red);
+      padding: 6px 10px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 800;
+      cursor: pointer;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .form-group {
+      margin-bottom: 11px;
+    }
+
+    .form-label {
+      display: block;
+      font-size: 12px;
+      font-weight: 700;
+      margin-bottom: 4px;
+      color: var(--text-dark);
+    }
+
+    .form-input {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1.5px solid #DCDFE6;
+      border-radius: 8px;
+      font-size: 13.5px;
+      outline: none;
+    }
+
+    .form-input:focus {
+      border-color: var(--royal-red);
+    }
+
+    .tag-pills {
+      display: flex;
+      gap: 8px;
+      margin-top: 4px;
+    }
+
+    .tag-pill {
+      flex: 1;
+      padding: 8px;
+      text-align: center;
+      border: 1.5px solid #DCDFE6;
+      border-radius: 8px;
+      font-size: 12.5px;
+      font-weight: 700;
+      cursor: pointer;
+      background: #FFF;
+    }
+
+    .tag-pill.active {
+      border-color: var(--royal-red);
+      background: #FFF8E1;
+      color: var(--royal-red);
+    }
+
+    .primary-cta-btn {
+      width: 100%;
+      padding: 13px;
+      background: var(--royal-red);
+      color: #FFFFFF;
+      border: none;
+      border-radius: 10px;
+      font-size: 14px;
+      font-weight: 800;
+      cursor: pointer;
+      margin-top: 10px;
+    }
+
+    .primary-cta-btn:disabled {
+      background: #B0BEC5;
+      cursor: not-allowed;
+    }
+
+    /* CHECKOUT & BILL DRAWER */
+    .checkout-item-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 0;
+      border-bottom: 1px dashed var(--border-light);
+    }
+
+    .bill-box {
+      background: #F9FAFB;
+      border: 1px solid var(--border-light);
+      border-radius: 12px;
+      padding: 12px;
+      margin: 12px 0;
+    }
+
+    .bill-line {
+      display: flex;
+      justify-content: space-between;
+      font-size: 13px;
+      margin-bottom: 6px;
+      color: var(--text-muted);
+    }
+
+    .bill-line.grand {
+      font-size: 15px;
+      font-weight: 800;
+      color: var(--text-dark);
+      border-top: 1px solid var(--border-light);
+      padding-top: 8px;
+      margin-top: 6px;
+      margin-bottom: 0;
+    }
+
+    /* PAYMENT SECTION */
+    .payment-card {
+      border: 1.5px solid #FFE082;
+      background: #FFFDF7;
+      border-radius: 12px;
+      padding: 14px;
+      text-align: center;
+      margin-top: 12px;
+    }
+
+    .qr-img {
+      width: 170px;
+      height: 170px;
+      margin: 10px auto;
+      display: block;
+      border: 4px solid #FFFFFF;
+      border-radius: 10px;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .upi-apps-row {
+      display: flex;
+      gap: 8px;
+      margin: 10px 0 14px;
+    }
+
+    .upi-app-btn {
+      flex: 1;
+      padding: 9px 6px;
+      border-radius: 8px;
+      border: 1.5px solid var(--royal-red);
+      background: #FFFFFF;
+      color: var(--royal-red);
+      font-size: 12px;
+      font-weight: 800;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .utr-error-msg {
+      color: #C62828;
+      font-size: 11.5px;
+      font-weight: 700;
+      margin-top: 4px;
+      display: none;
+      text-align: left;
+    }
+
+    /* HISTORY SCREEN */
+    .history-container {
+      display: none;
+      padding: 14px 16px;
+    }
+
+    .order-card {
+      background: #FFFFFF;
+      border-radius: 14px;
+      padding: 14px;
+      margin-bottom: 12px;
+      border: 1px solid var(--border-light);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .order-card.fresh {
+      border: 2px solid var(--royal-red);
+      background: #FFFDF9;
+    }
+
+    .order-badge-preparing {
+      background: #FFF8E1;
+      color: #D84315;
+      border: 1px solid #FFCC80;
+      padding: 3px 8px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 800;
+    }
+
+    .order-badge-delivered {
+      background: #E8F5E9;
+      color: #1B5E20;
+      padding: 3px 8px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 800;
+    }
+
+    .reorder-btn {
+      background: #FFFFFF;
+      color: var(--royal-red);
+      border: 1.5px solid var(--royal-red);
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 800;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- 1. TOP LOCATION SELECTOR BAR -->
+  <div class="top-location-bar" id="topLocationBar" onclick="openLocationModal()">
+    <div class="loc-left">
+      <span class="loc-pin">📍</span>
+      <span class="loc-text" id="activeLocationLabel">Select Delivery Location</span>
+      <span>⌄</span>
+    </div>
+    <span class="loc-distance-pill" id="activeDistanceBadge" style="display:none;">0.0 km</span>
+  </div>
+
+  <!-- MAIN BRAND HEADER BANNER -->
+  <header class="brand-header">
+    <div class="brand-title">RAVULAMMA</div>
+    <div class="brand-subtitle">FOOD DELIVERY</div>
+  </header>
+
+  <!-- SHOP CLOSED OR GEOFENCE WARNING BANNERS -->
+  <div id="shopClosedBanner" class="status-banner"></div>
+  <div id="geofenceBanner" class="status-banner"></div>
+
+  <!-- MENU VIEW -->
+  <main id="menuScreen">
+    <!-- 3. STICKY SEARCH & CATEGORY FILTER BAR -->
+    <div class="sticky-controls">
+      <div class="search-box">
+        <span class="search-icon">🔍</span>
+        <input
+          type="text"
+          id="menuSearchInput"
+          class="search-input"
+          placeholder='Search for "Onion Dosa", "Chicken Biryani"...'
+          oninput="handleSearchInput()"
+        />
+        <span class="clear-search" id="clearSearchBtn" onclick="clearSearch()">✕</span>
+      </div>
+      <div class="filter-pills">
+        <button class="filter-pill active" id="filterAll" onclick="setCategoryFilter('ALL')">All Items</button>
+        <button class="filter-pill" id="filterVeg" onclick="setCategoryFilter('VEG')">
+          <span class="diet-icon veg"></span> Veg
+        </button>
+        <button class="filter-pill" id="filterNonVeg" onclick="setCategoryFilter('NONVEG')">
+          <span class="diet-icon nonveg"></span> Non-Veg
+        </button>
+      </div>
+    </div>
+
+    <!-- 4. MENU ITEM CARDS CONTAINER -->
+    <div class="menu-container" id="menuListContainer"></div>
+  </main>
+
+  <!-- 7. HISTORY VIEW -->
+  <section id="historyScreen" class="history-container">
+    <div id="freshOrdersContainer"></div>
+    <div class="section-label" style="margin-top: 8px;">PAST DELIVERED ORDERS (30)</div>
+    <div id="pastOrdersContainer"></div>
+  </section>
+
+  <!-- 5. FLOATING CART BAR -->
+  <div class="floating-cart-wrap" id="floatingCartWrap">
+    <div class="savings-strip" id="cartSavingsStrip">You are saving ₹0 on this order!</div>
+    <div class="floating-cart-bar" onclick="openCheckoutModal()">
+      <div class="cart-left-info" id="cartItemsSummary">0 item(s) added</div>
+      <button class="cart-continue-btn">Continue &gt;</button>
+    </div>
+  </div>
+
+  <!-- 7. FIXED BOTTOM NAVIGATION BAR -->
+  <nav class="bottom-nav">
+    <button class="nav-tab active" id="navMenuBtn" onclick="switchTab('MENU')">
+      <span class="nav-icon">🍽️</span>
+      <span>Menu</span>
+    </button>
+    <button class="nav-tab" id="navHistoryBtn" onclick="switchTab('HISTORY')">
+      <span class="nav-icon">📜</span>
+      <span>History</span>
+    </button>
+  </nav>
+
+  <!-- 2A. SELECT LOCATION MODAL -->
+  <div class="modal-overlay" id="locationModal">
+    <div class="bottom-sheet">
+      <div class="sheet-header">
+        <span class="sheet-title">Select a location</span>
+        <button class="close-btn" onclick="closeLocationModal()">✕</button>
+      </div>
+
+      <div class="search-box" style="margin-bottom: 12px;">
+        <span class="search-icon">🔍</span>
+        <input
+          type="text"
+          id="savedAddressSearch"
+          class="search-input"
+          placeholder="Search saved area or street name..."
+          oninput="renderSavedAddressesList()"
+        />
+      </div>
+
+      <button class="add-address-primary-btn" onclick="openAddAddressModal()">
+        <span>+ Add Address</span>
+        <span>&gt;</span>
+      </button>
+
+      <div class="section-label">SAVED ADDRESSES</div>
+      <div id="savedAddressesContainer"></div>
+    </div>
+  </div>
+
+  <!-- 2B. ADD ADDRESS MODAL WITH INTERACTIVE LEAFLET MAP -->
+  <div class="modal-overlay" id="addAddressModal">
+    <div class="bottom-sheet">
+      <div class="sheet-header">
+        <span class="sheet-title">Pin Exact Delivery Location</span>
+        <button class="close-btn" onclick="closeAddAddressModal()">✕</button>
+      </div>
+
+      <div class="map-wrapper">
+        <div class="map-hint-pill">Move pin to your exact delivery location</div>
+        <div id="leafletMap"></div>
+        <button type="button" class="use-gps-floating-btn" onclick="fetchDeviceGPSLocation()">
+          🎯 Use current location
+        </button>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Area / Locality (Auto-filled from map pin)</label>
+        <input type="text" id="addrAreaInput" class="form-input" placeholder="e.g., RR Pet, Eluru" />
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Address Details* (House/Flat No., Floor, Landmark)</label>
+        <input type="text" id="addrDetailsInput" class="form-input" placeholder="e.g., Flat 201, Near Clock Tower" />
+      </div>
+
+      <div style="display:flex; gap:10px;">
+        <div class="form-group" style="flex:1;">
+          <label class="form-label">Receiver's Name*</label>
+          <input type="text" id="addrReceiverName" class="form-input" placeholder="Your Name" />
+        </div>
+        <div class="form-group" style="flex:1;">
+          <label class="form-label">10-Digit Mobile*</label>
+          <input type="tel" id="addrReceiverPhone" class="form-input" maxlength="10" placeholder="9876543210" />
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Save address as</label>
+        <div class="tag-pills">
+          <div class="tag-pill active" id="tagHome" onclick="selectAddressTag('Home')">🏠 Home</div>
+          <div class="tag-pill" id="tagWork" onclick="selectAddressTag('Work')">💼 Work</div>
+          <div class="tag-pill" id="tagOther" onclick="selectAddressTag('Other')">📍 Other</div>
+        </div>
+      </div>
+
+      <div id="livePinDistanceInfo" style="font-size:12px; font-weight:700; margin:6px 0; color:var(--text-muted);"></div>
+
+      <button class="primary-cta-btn" onclick="saveNewCustomerAddress()">Save Address</button>
+    </div>
+  </div>
+
+  <!-- 5 & 6. CHECKOUT, BILL & PAYMENT DRAWER -->
+  <div class="modal-overlay" id="checkoutModal">
+    <div class="bottom-sheet">
+      <div class="sheet-header">
+        <span class="sheet-title">Checkout & Payment</span>
+        <button class="close-btn" onclick="closeCheckoutModal()">✕</button>
+      </div>
+
+      <div id="checkoutItemsContainer"></div>
+
+      <button
+        type="button"
+        style="margin-top:8px; background:none; border:none; color:var(--royal-red); font-size:13px; font-weight:800; cursor:pointer;"
+        onclick="closeCheckoutModal()"
+      >
+        + Add more items
+      </button>
+
+      <div class="form-group" style="margin-top:12px;">
+        <input
+          type="text"
+          id="cookingInstructionsInput"
+          class="form-input"
+          placeholder="Add cooking instructions / note for restaurant..."
+        />
+      </div>
+
+      <div class="saved-addr-card selected" style="margin-top:12px;">
+        <div class="addr-card-top">
+          <span class="addr-tag-badge" id="checkoutAddrTitle">Delivering to: Not selected</span>
+          <button
+            type="button"
+            style="background:none; border:none; color:var(--royal-red); font-weight:800; font-size:12px; cursor:pointer;"
+            onclick="closeCheckoutModal(); openLocationModal();"
+          >
+            Change
+          </button>
+        </div>
+        <div id="checkoutAddrSub" style="font-size:12px; color:var(--text-muted);"></div>
+      </div>
+
+      <div class="bill-box">
+        <div class="bill-line">
+          <span>Item Total</span>
+          <span id="billItemTotal">₹0</span>
+        </div>
+        <div class="bill-line">
+          <span>Delivery Charge (Applied Once)</span>
+          <span id="billDeliveryCharge">₹20</span>
+        </div>
+        <div class="bill-line" style="color:var(--discount-blue); font-weight:700;">
+          <span>Total Discount Saved</span>
+          <span id="billTotalSaved">-₹0</span>
+        </div>
+        <div class="bill-line grand">
+          <span>Grand Total to Pay</span>
+          <span id="billGrandTotal">₹0</span>
+        </div>
+      </div>
+
+      <div class="payment-card">
+        <div style="font-size:13px; font-weight:800; color:var(--royal-red);">
+          Scan QR or Tap Any UPI App to Pay Exact <span id="qrPayAmountText">₹0</span>
+        </div>
+
+        <img id="upiQrImage" class="qr-img" src="" alt="Scan to Pay QR" />
+
+        <div class="upi-apps-row">
+          <a id="btnPhonePe" href="#" class="upi-app-btn">PhonePe</a>
+          <a id="btnGPay" href="#" class="upi-app-btn">Google Pay</a>
+          <a id="btnPaytm" href="#" class="upi-app-btn">Paytm</a>
+        </div>
+
+        <button
+          id="razorpayCheckoutBtn"
+          type="button"
+          class="primary-cta-btn"
+          style="display:none; background:#02042B; margin-bottom:10px;"
+          onclick="triggerRazorpayCheckout(currentGrandTotal)"
+        >
+          Pay Instant via Razorpay
+        </button>
+
+        <div style="text-align:left; margin-top:6px;">
+          <label class="form-label">Enter 12-Digit UPI UTR / Reference No.*</label>
+          <input
+            type="text"
+            id="utrInput"
+            class="form-input"
+            maxlength="12"
+            inputmode="numeric"
+            placeholder="Enter 12-digit UTR after payment"
+            oninput="validateUTRInput()"
+          />
+          <div id="utrErrorMsg" class="utr-error-msg"></div>
+        </div>
+
+        <button
+          id="placeOrderBtn"
+          type="button"
+          class="primary-cta-btn"
+          disabled
+          onclick="submitCustomerOrder()"
+        >
+          Place Order
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Leaflet JS -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+  <script>
+    /*************************************************************************
+     * EXTERNAL ADMIN DATA SYNC BRIDGE (16 ITEMS: 14 TIFFINS + 2 BIRYANI)
+     *************************************************************************/
+    const ADMIN_SYNC_ENDPOINT = window.RAVULAMMA_ADMIN_ENDPOINT || null;
+    const STORAGE_KEYS = {
+      SETTINGS: 'ravulamma_shop_settings',
+      MENU: 'ravulamma_menu_catalog',
+      ORDERS: 'ravulamma_orders',
+      ADDRESSES: 'ravulamma_customer_addresses',
+      ACTIVE_ADDR_ID: 'ravulamma_active_address_id'
+    };
+
+    const syncChannel = ('BroadcastChannel' in window) ? new BroadcastChannel('ravulamma_sync') : null;
+
+    const DEFAULT_SHOP_SETTINGS = {
+      isOpen: true,
+      openingTime: '06:00 AM',
+      closingTime: '11:30 PM',
+      enforceScheduleHours: false,
+      deliveryCharge: 20,
+      maxDeliveryRadiusKm: 5,
+      restaurantLat: 16.7107,
+      restaurantLng: 81.0952,
+      razorpayEnabled: false,
+      razorpayKeyId: ''
+    };
+
+    const DEFAULT_MENU_ITEMS = [
+      { id: 't1', name: 'Appalu', category: 'VEG', sellingPrice: 40, mrpPrice: 60, discountPercent: 33, description: 'Crispy golden traditional Andhra sweet and savory tiffin appalu served hot.', imageUrl: 'https://images.unsplash.com/photo-1589301760014-d929f3979dbc?auto=format&fit=crop&w=400&q=80', isBestseller: true, inStock: true },
+      { id: 't2', name: 'Idli', category: 'VEG', sellingPrice: 40, mrpPrice: 60, discountPercent: 33, description: 'Soft, fluffy steamed rice cakes served with fresh groundnut chutney and karam podi.', imageUrl: 'https://images.unsplash.com/photo-1589301760014-d929f3979dbc?auto=format&fit=crop&w=400&q=80', isBestseller: true, inStock: true },
+      { id: 't3', name: 'Egg Dosa', category: 'NONVEG', sellingPrice: 60, mrpPrice: 90, discountPercent: 33, description: 'Crispy crepe topped with farm-fresh beaten egg, black pepper, and special karam.', imageUrl: 'https://images.unsplash.com/photo-1668236543090-82eba5ee5976?auto=format&fit=crop&w=400&q=80', isBestseller: true, inStock: true },
+      { id: 't4', name: 'Parotta', category: 'VEG', sellingPrice: 60, mrpPrice: 90, discountPercent: 33, description: 'Flaky, multi-layered golden flatbread served with rich, aromatic kurma.', imageUrl: 'https://images.unsplash.com/photo-1626074353765-517a681e40be?auto=format&fit=crop&w=400&q=80', isBestseller: false, inStock: true },
+      { id: 't5', name: 'Chapathi', category: 'VEG', sellingPrice: 50, mrpPrice: 80, discountPercent: 38, description: 'Soft whole-wheat rotis cooked on a hot tawa, paired with homestyle veg curry.', imageUrl: 'https://images.unsplash.com/photo-1565557623262-b51c2513a641?auto=format&fit=crop&w=400&q=80', isBestseller: false, inStock: true },
+      { id: 't6', name: 'Onion Pesarattu', category: 'VEG', sellingPrice: 60, mrpPrice: 90, discountPercent: 33, description: 'Protein-rich green gram dosa topped generously with finely chopped onions and ginger.', imageUrl: 'https://images.unsplash.com/photo-1630383249896-424e482df921?auto=format&fit=crop&w=400&q=80', isBestseller: true, inStock: true },
+      { id: 't7', name: 'Rava Dosa', category: 'VEG', sellingPrice: 60, mrpPrice: 90, discountPercent: 33, description: 'Thin, netted semolina crepe infused with cumin, green chilies, and curry leaves.', imageUrl: 'https://images.unsplash.com/photo-1668236543090-82eba5ee5976?auto=format&fit=crop&w=400&q=80', isBestseller: false, inStock: true },
+      { id: 't8', name: 'Onion Dosa', category: 'VEG', sellingPrice: 50, mrpPrice: 100, discountPercent: 50, description: 'Classic crispy golden dosa loaded with caramelized onions and served with chutneys.', imageUrl: 'https://images.unsplash.com/photo-1630383249896-424e482df921?auto=format&fit=crop&w=400&q=80', isBestseller: true, inStock: true },
+      { id: 't9', name: 'Karam Dosa', category: 'VEG', sellingPrice: 50, mrpPrice: 80, discountPercent: 38, description: 'Crispy dosa smeared with spicy red garlic-chili chutney and pure roasted flavors.', imageUrl: 'https://images.unsplash.com/photo-1668236543090-82eba5ee5976?auto=format&fit=crop&w=400&q=80', isBestseller: true, inStock: true },
+      { id: 't10', name: 'Plain Dosa', category: 'VEG', sellingPrice: 50, mrpPrice: 75, discountPercent: 33, description: 'Golden, paper-thin fermented rice and lentil crepe served with peanut chutney.', imageUrl: 'https://images.unsplash.com/photo-1630383249896-424e482df921?auto=format&fit=crop&w=400&q=80', isBestseller: false, inStock: true },
+      { id: 't11', name: 'Egg Chapathi', category: 'NONVEG', sellingPrice: 80, mrpPrice: 120, discountPercent: 33, description: 'Soft wheat chapathis layered with spiced egg omelette and savory masala.', imageUrl: 'https://images.unsplash.com/photo-1565557623262-b51c2513a641?auto=format&fit=crop&w=400&q=80', isBestseller: false, inStock: true },
+      { id: 't12', name: 'Egg Parotta', category: 'NONVEG', sellingPrice: 80, mrpPrice: 120, discountPercent: 33, description: 'Flaky layered parotta roasted with seasoned beaten eggs and aromatic spices.', imageUrl: 'https://images.unsplash.com/photo-1626074353765-517a681e40be?auto=format&fit=crop&w=400&q=80', isBestseller: true, inStock: true },
+      { id: 't13', name: 'Uttapam', category: 'VEG', sellingPrice: 60, mrpPrice: 90, discountPercent: 33, description: 'Thick, spongy savory pancake studded with fresh onions, chilies, and coriander.', imageUrl: 'https://images.unsplash.com/photo-1630383249896-424e482df921?auto=format&fit=crop&w=400&q=80', isBestseller: false, inStock: true },
+      { id: 't14', name: 'Double Egg Omelette', category: 'NONVEG', sellingPrice: 40, mrpPrice: 60, discountPercent: 33, description: 'Fluffy two-egg omelette cooked with chopped onions, green chilies, and pepper.', imageUrl: 'https://images.unsplash.com/photo-1525351484163-7529414344d8?auto=format&fit=crop&w=400&q=80', isBestseller: true, inStock: true },
+      { id: 'b15', name: 'Chicken Dum Biryani', category: 'NONVEG', sellingPrice: 180, mrpPrice: 250, discountPercent: 28, description: 'Authentic slow-cooked dum biryani layered with succulent tender chicken and aromatic basmati rice.', imageUrl: 'https://images.unsplash.com/photo-1563379091339-03b21ab4a4f8?auto=format&fit=crop&w=400&q=80', isBestseller: true, inStock: true },
+      { id: 'b16', name: 'Chicken Fry Biryani', category: 'NONVEG', sellingPrice: 190, mrpPrice: 260, discountPercent: 27, description: 'Flavorful biryani rice topped with spicy, crispy deep-fried chicken pieces and special masalas.', imageUrl: 'https://images.unsplash.com/photo-1633964913295-ceb43826e7c9?auto=format&fit=crop&w=400&q=80', isBestseller: true, inStock: true }
+    ];
+
+    let shopSettings = loadShopSettings();
+    let menuCatalog = loadMenuCatalog();
+    let cart = {};
+    let currentCategoryFilter = 'ALL';
+    let currentSearchQuery = '';
+    let selectedAddressTag = 'Home';
+    let currentGrandTotal = 0;
+
+    let mapInstance = null;
+    let mapMarker = null;
+    let tempPinLat = shopSettings.restaurantLat;
+    let tempPinLng = shopSettings.restaurantLng;
+
+    function loadShopSettings() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEYS.SETTINGS);
+        return raw ? { ...DEFAULT_SHOP_SETTINGS, ...JSON.parse(raw) } : { ...DEFAULT_SHOP_SETTINGS };
+      } catch (e) {
+        return { ...DEFAULT_SHOP_SETTINGS };
+      }
+    }
+
+    function loadMenuCatalog() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEYS.MENU);
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (Array.isArray(parsed)) return parsed;
+        }
+      } catch (e) {}
+      localStorage.setItem(STORAGE_KEYS.MENU, JSON.stringify(DEFAULT_MENU_ITEMS));
+      return [...DEFAULT_MENU_ITEMS];
+    }
+
+    window.addEventListener('storage', (event) => {
+      if (event.key === STORAGE_KEYS.SETTINGS || event.key === STORAGE_KEYS.MENU || event.key === STORAGE_KEYS.ORDERS) {
+        refreshFromAdminBridge();
+      }
+    });
+
+    if (syncChannel) {
+      syncChannel.onmessage = (msg) => {
+        if (msg && msg.data && msg.data.type === 'ADMIN_DATA_UPDATED') {
+          refreshFromAdminBridge();
+        }
+      };
+    }
+
+    function refreshFromAdminBridge() {
+      shopSettings = loadShopSettings();
+      menuCatalog = loadMenuCatalog();
+      renderShopStatusAndGeofenceBanners();
+      renderMenuCards();
+      updateCartUI();
+      renderOrderHistory();
+    }
+
+    function calculateHaversineKm(lat1, lon1, lat2, lon2) {
+      const R = 6371;
+      const dLat = (lat2 - lat1) * Math.PI / 180;
+      const dLon = (lon2 - lon1) * Math.PI / 180;
+      const a =
+        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+        Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+        Math.sin(dLon / 2) * Math.sin(dLon / 2);
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+      return +(R * c).toFixed(2);
+    }
+
+    function isShopCurrentlyOpen() {
+      if (!shopSettings.isOpen) return false;
+      return true;
+    }
+
+    function getSavedAddresses() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEYS.ADDRESSES);
+        return raw ? JSON.parse(raw) : [];
+      } catch (e) {
+        return [];
+      }
+    }
+
+    function getActiveAddress() {
+      const list = getSavedAddresses();
+      const activeId = localStorage.getItem(STORAGE_KEYS.ACTIVE_ADDR_ID);
+      if (!list.length) return null;
+      return list.find(a => a.id === activeId) || list[0];
+    }
+
+    function isAddressWithinRadius(addr) {
+      if (!addr) return true;
+      const dist = calculateHaversineKm(
+        shopSettings.restaurantLat,
+        shopSettings.restaurantLng,
+        addr.lat,
+        addr.lng
+      );
+      return dist <= Number(shopSettings.maxDeliveryRadiusKm || 5);
+    }
+
+    function renderTopLocationBar() {
+      const active = getActiveAddress();
+      const labelEl = document.getElementById('activeLocationLabel');
+      const badgeEl = document.getElementById('activeDistanceBadge');
+
+      if (!active) {
+        labelEl.textContent = 'Select Delivery Location';
+        badgeEl.style.display = 'none';
+      } else {
+        const dist = calculateHaversineKm(
+          shopSettings.restaurantLat,
+          shopSettings.restaurantLng,
+          active.lat,
+          active.lng
+        );
+        labelEl.textContent = `${active.tag}: ${active.area}`;
+        badgeEl.textContent = `${dist} km`;
+        badgeEl.style.display = 'inline-block';
+      }
+    }
+
+    function renderShopStatusAndGeofenceBanners() {
+      const closedBanner = document.getElementById('shopClosedBanner');
+      const geoBanner = document.getElementById('geofenceBanner');
+
+      if (!isShopCurrentlyOpen()) {
+        closedBanner.className = 'status-banner closed';
+        closedBanner.textContent = `Currently Closed - Opens at ${shopSettings.openingTime}`;
+      } else {
+        closedBanner.className = 'status-banner';
+        closedBanner.textContent = '';
+      }
+
+      const activeAddr = getActiveAddress();
+      if (activeAddr && !isAddressWithinRadius(activeAddr)) {
+        geoBanner.className = 'status-banner geofence-error';
+        geoBanner.textContent = `Sorry, delivery is currently available only within ${shopSettings.maxDeliveryRadiusKm} km`;
+      } else {
+        geoBanner.className = 'status-banner';
+        geoBanner.textContent = '';
+      }
+    }
+
+    function handleSearchInput() {
+      const input = document.getElementById('menuSearchInput');
+      currentSearchQuery = input.value.trim().toLowerCase();
+      document.getElementById('clearSearchBtn').style.display = currentSearchQuery ? 'block' : 'none';
+      renderMenuCards();
+    }
+
+    function clearSearch() {
+      document.getElementById('menuSearchInput').value = '';
+      currentSearchQuery = '';
+      document.getElementById('clearSearchBtn').style.display = 'none';
+      renderMenuCards();
+    }
+
+    function setCategoryFilter(cat) {
+      currentCategoryFilter = cat;
+      document.getElementById('filterAll').classList.toggle('active', cat === 'ALL');
+      document.getElementById('filterVeg').classList.toggle('active', cat === 'VEG');
+      document.getElementById('filterNonVeg').classList.toggle('active', cat === 'NONVEG');
+      renderMenuCards();
+    }
+
+    function renderMenuCards() {
+      const container = document.getElementById('menuListContainer');
+      const filtered = menuCatalog.filter(item => {
+        const matchesCat =
+          currentCategoryFilter === 'ALL' ||
+          item.category.toUpperCase() === currentCategoryFilter;
+        const matchesSearch =
+          !currentSearchQuery ||
+          item.name.toLowerCase().includes(currentSearchQuery) ||
+          item.description.toLowerCase().includes(currentSearchQuery);
+        return matchesCat && matchesSearch;
+      });
+
+      if (!filtered.length) {
+        container.innerHTML = `<div style="text-align:center; padding:40px 16px; color:var(--text-muted); font-weight:600;">No matching items found.</div>`;
+        return;
+      }
+
+      container.innerHTML = filtered.map(item => {
+        const qty = cart[item.id] || 0;
+        const dietClass = item.category === 'NONVEG' ? 'nonveg' : 'veg';
+        const discountPct = item.discountPercent || Math.round(((item.mrpPrice - item.sellingPrice) / item.mrpPrice) * 100);
+
+        let actionHtml = '';
+        if (!item.inStock) {
+          actionHtml = `<div class="sold-out-badge">Sold Out</div>`;
+        } else if (qty === 0) {
+          actionHtml = `<button class="btn-add" onclick="changeItemQty('${item.id}', 1)">ADD <span>+</span></button>`;
+        } else {
+          actionHtml = `
+            <div class="qty-stepper">
+              <button class="qty-btn" onclick="changeItemQty('${item.id}', -1)">−</button>
+              <span>${qty}</span>
+              <button class="qty-btn" onclick="changeItemQty('${item.id}', 1)">+</button>
+            </div>
+          `;
+        }
+
+        return `
+          <div class="menu-card">
+            <div class="menu-left">
+              <div class="badge-row">
+                <span class="diet-icon ${dietClass}"></span>
+                ${item.isBestseller ? `<span class="bestseller-badge">★ Bestseller / Must Try</span>` : ''}
+              </div>
+              <div class="item-name">${item.name}</div>
+              <div class="price-row">
+                <span class="selling-price">₹${item.sellingPrice}</span>
+                <span class="mrp-price">₹${item.mrpPrice}</span>
+              </div>
+              <div class="discount-tag">${discountPct}% OFF</div>
+              <p class="item-desc">${item.description}</p>
+            </div>
+            <div class="menu-right">
+              <img src="${item.imageUrl}" alt="${item.name}" class="item-img ${!item.inStock ? 'out-of-stock' : ''}" />
+              <div class="action-box">${actionHtml}</div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function changeItemQty(itemId, delta) {
+      const item = menuCatalog.find(i => i.id === itemId);
+      if (!item || !item.inStock) return;
+      const next = (cart[itemId] || 0) + delta;
+      if (next <= 0) {
+        delete cart[itemId];
+      } else {
+        cart[itemId] = next;
+      }
+      renderMenuCards();
+      updateCartUI();
+    }
+
+    function updateCartUI() {
+      let totalItems = 0;
+      let itemTotal = 0;
+      let totalMrp = 0;
+
+      for (const [id, qty] of Object.entries(cart)) {
+        const item = menuCatalog.find(i => i.id === id);
+        if (item && item.inStock && qty > 0) {
+          totalItems += qty;
+          itemTotal += item.sellingPrice * qty;
+          totalMrp += item.mrpPrice * qty;
+        } else {
+          delete cart[id];
+        }
+      }
+
+      const wrap = document.getElementById('floatingCartWrap');
+      if (totalItems < 1) {
+        wrap.style.display = 'none';
+        if (document.getElementById('checkoutModal').classList.contains('open')) {
+          closeCheckoutModal();
+        }
+        return;
+      }
+
+      const totalSaved = Math.max(0, totalMrp - itemTotal);
+      document.getElementById('cartSavingsStrip').textContent = `You are saving ₹${totalSaved} on this order!`;
+      document.getElementById('cartItemsSummary').textContent = `${totalItems} item(s) added | ₹${itemTotal}`;
+      wrap.style.display = 'block';
+
+      if (document.getElementById('checkoutModal').classList.contains('open')) {
+        renderCheckoutDrawerContents();
+      }
+    }
+
+    function openCheckoutModal() {
+      renderCheckoutDrawerContents();
+      document.getElementById('checkoutModal').classList.add('open');
+    }
+
+    function closeCheckoutModal() {
+      document.getElementById('checkoutModal').classList.remove('open');
+    }
+
+    function renderCheckoutDrawerContents() {
+      const listEl = document.getElementById('checkoutItemsContainer');
+      let itemTotal = 0;
+      let totalMrp = 0;
+
+      const rowsHtml = Object.entries(cart).map(([id, qty]) => {
+        const item = menuCatalog.find(i => i.id === id);
+        if (!item) return '';
+        const linePrice = item.sellingPrice * qty;
+        itemTotal += linePrice;
+        totalMrp += item.mrpPrice * qty;
+
+        return `
+          <div class="checkout-item-row">
+            <div style="display:flex; align-items:center; gap:8px;">
+              <span class="diet-icon ${item.category === 'NONVEG' ? 'nonveg' : 'veg'}"></span>
+              <div>
+                <div style="font-size:14px; font-weight:700;">${item.name}</div>
+                <div style="font-size:12px; color:var(--text-muted);">₹${item.sellingPrice} each</div>
+              </div>
+            </div>
+            <div style="display:flex; align-items:center; gap:12px;">
+              <div class="qty-stepper" style="width:86px; height:30px;">
+                <button class="qty-btn" onclick="changeItemQty('${item.id}', -1)">−</button>
+                <span>${qty}</span>
+                <button class="qty-btn" onclick="changeItemQty('${item.id}', 1)">+</button>
+              </div>
+              <div style="font-size:14px; font-weight:800; min-width:48px; text-align:right;">₹${linePrice}</div>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      listEl.innerHTML = rowsHtml;
+
+      const deliveryCharge = Number(shopSettings.deliveryCharge ?? 20);
+      const savedAmount = Math.max(0, totalMrp - itemTotal);
+      currentGrandTotal = itemTotal + deliveryCharge;
+
+      document.getElementById('billItemTotal').textContent = `₹${itemTotal}`;
+      document.getElementById('billDeliveryCharge').textContent = `₹${deliveryCharge}`;
+      document.getElementById('billTotalSaved').textContent = `-₹${savedAmount}`;
+      document.getElementById('billGrandTotal').textContent = `₹${currentGrandTotal}`;
+      document.getElementById('qrPayAmountText').textContent = `₹${currentGrandTotal}`;
+
+      const activeAddr = getActiveAddress();
+      const addrTitleEl = document.getElementById('checkoutAddrTitle');
+      const addrSubEl = document.getElementById('checkoutAddrSub');
+
+      if (!activeAddr) {
+        addrTitleEl.textContent = 'No Delivery Address Selected';
+        addrSubEl.textContent = 'Please tap "Change" to add or select your delivery location.';
+      } else {
+        const dist = calculateHaversineKm(
+          shopSettings.restaurantLat,
+          shopSettings.restaurantLng,
+          activeAddr.lat,
+          activeAddr.lng
+        );
+        addrTitleEl.textContent = `${activeAddr.tag} (${dist} km) - ${activeAddr.receiverName}`;
+        addrSubEl.textContent = `${activeAddr.details}, ${activeAddr.area} | 📞 ${activeAddr.receiverPhone}`;
+      }
+
+      const lockedUpiUri = `upi://pay?pa=paytm.s38kyb3@pty&pn=KATARI%20RAMUDAMMA&am=${currentGrandTotal}&cu=INR&mam=${currentGrandTotal}`;
+      const qrApiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(lockedUpiUri)}`;
+      document.getElementById('upiQrImage').src = qrApiUrl;
+
+      document.getElementById('btnPhonePe').href = lockedUpiUri;
+      document.getElementById('btnGPay').href = lockedUpiUri;
+      document.getElementById('btnPaytm').href = lockedUpiUri;
+
+      const rzpBtn = document.getElementById('razorpayCheckoutBtn');
+      rzpBtn.style.display = (shopSettings.razorpayEnabled && shopSettings.razorpayKeyId) ? 'block' : 'none';
+
+      validateUTRInput();
+    }
+
+    function openLocationModal() {
+      renderSavedAddressesList();
+      document.getElementById('locationModal').classList.add('open');
+    }
+
+    function closeLocationModal() {
+      document.getElementById('locationModal').classList.remove('open');
+    }
+
+    function renderSavedAddressesList() {
+      const container = document.getElementById('savedAddressesContainer');
+      const query = (document.getElementById('savedAddressSearch').value || '').trim().toLowerCase();
+      const list = getSavedAddresses();
+      const active = getActiveAddress();
+
+      const filtered = list.filter(a =>
+        !query ||
+        a.area.toLowerCase().includes(query) ||
+        a.details.toLowerCase().includes(query) ||
+        a.tag.toLowerCase().includes(query)
+      );
+
+      if (!filtered.length) {
+        container.innerHTML = `<div style="padding:18px 0; text-align:center; color:var(--text-muted); font-size:13px;">No saved addresses yet. Tap "+ Add Address" above.</div>`;
+        return;
+      }
+
+      container.innerHTML = filtered.map(addr => {
+        const dist = calculateHaversineKm(
+          shopSettings.restaurantLat,
+          shopSettings.restaurantLng,
+          addr.lat,
+          addr.lng
+        );
+        const withinRange = dist <= Number(shopSettings.maxDeliveryRadiusKm || 5);
+        const isSelected = active && active.id === addr.id;
+        const icon = addr.tag === 'Home' ? '🏠' : addr.tag === 'Work' ? '💼' : '📍';
+
+        return `
+          <div class="saved-addr-card ${isSelected ? 'selected' : ''}" onclick="selectSavedAddress('${addr.id}')">
+            <div class="addr-card-top">
+              <span class="addr-tag-badge">${icon} ${addr.tag}</span>
+              <span class="addr-km-badge ${!withinRange ? 'out-of-range' : ''}">
+                ${dist} km ${!withinRange ? '(Out of Range)' : ''}
+              </span>
+            </div>
+            <div style="font-size:13px; font-weight:700; margin-bottom:2px;">
+              ${addr.receiverName} (${addr.receiverPhone})
+            </div>
+            <div style="font-size:12px; color:var(--text-muted);">
+              ${addr.details}, ${addr.area}
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function selectSavedAddress(id) {
+      localStorage.setItem(STORAGE_KEYS.ACTIVE_ADDR_ID, id);
+      renderTopLocationBar();
+      renderShopStatusAndGeofenceBanners();
+      closeLocationModal();
+      if (document.getElementById('checkoutModal').classList.contains('open')) {
+        renderCheckoutDrawerContents();
+      }
+    }
+
+    function openAddAddressModal() {
+      closeLocationModal();
+      document.getElementById('addAddressModal').classList.add('open');
+      setTimeout(() => {
+        initOrRefreshLeafletMap();
+      }, 150);
+    }
+
+    function closeAddAddressModal() {
+      document.getElementById('addAddressModal').classList.remove('open');
+    }
+
+    function initOrRefreshLeafletMap() {
+      if (!mapInstance) {
+        mapInstance = L.map('leafletMap').setView([tempPinLat, tempPinLng], 15);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+          attribution: '© OpenStreetMap'
+        }).addTo(mapInstance);
+
+        mapMarker = L.marker([tempPinLat, tempPinLng], { draggable: true }).addTo(mapInstance);
+
+        mapMarker.on('dragend', function (e) {
+          const pos = e.target.getLatLng();
+          updatePinCoordinates(pos.lat, pos.lng);
+        });
+
+        mapInstance.on('click', function (e) {
+          mapMarker.setLatLng(e.latlng);
+          updatePinCoordinates(e.latlng.lat, e.latlng.lng);
+        });
+      } else {
+        mapInstance.invalidateSize();
+        mapInstance.setView([tempPinLat, tempPinLng], 15);
+        mapMarker.setLatLng([tempPinLat, tempPinLng]);
+      }
+      updatePinCoordinates(tempPinLat, tempPinLng);
+    }
+
+    async function updatePinCoordinates(lat, lng) {
+      tempPinLat = lat;
+      tempPinLng = lng;
+      const dist = calculateHaversineKm(shopSettings.restaurantLat, shopSettings.restaurantLng, lat, lng);
+      const maxKm = Number(shopSettings.maxDeliveryRadiusKm || 5);
+      const infoEl = document.getElementById('livePinDistanceInfo');
+
+      if (dist > maxKm) {
+        infoEl.style.color = '#C62828';
+        infoEl.textContent = `⚠️ Pin is ${dist} km away. Sorry, delivery is currently available only within ${maxKm} km.`;
+      } else {
+        infoEl.style.color = '#0F8A43';
+        infoEl.textContent = `✅ Pin is ${dist} km from restaurant (Within ${maxKm} km delivery zone).`;
+      }
+
+      try {
+        const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}`);
+        if (res.ok) {
+          const data = await res.json();
+          const addr = data.address || {};
+          const suburb = addr.suburb || addr.neighbourhood || addr.residential || addr.road || '';
+          const city = addr.city || addr.town || addr.village || 'Eluru';
+          const formatted = [suburb, city].filter(Boolean).join(', ');
+          if (formatted) {
+            document.getElementById('addrAreaInput').value = formatted;
+          }
+        }
+      } catch (e) {}
+    }
+
+    function fetchDeviceGPSLocation() {
+      if (!navigator.geolocation) {
+        alert('Geolocation is not supported by your browser.');
+        return;
+      }
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          const { latitude, longitude } = pos.coords;
+          if (mapInstance && mapMarker) {
+            mapInstance.setView([latitude, longitude], 16);
+            mapMarker.setLatLng([latitude, longitude]);
+          }
+          updatePinCoordinates(latitude, longitude);
+        },
+        () => {
+          alert('Unable to retrieve GPS coordinates. Please move the map pin manually.');
+        },
+        { enableHighAccuracy: true, timeout: 8000 }
+      );
+    }
+
+    function selectAddressTag(tag) {
+      selectedAddressTag = tag;
+      document.getElementById('tagHome').classList.toggle('active', tag === 'Home');
+      document.getElementById('tagWork').classList.toggle('active', tag === 'Work');
+      document.getElementById('tagOther').classList.toggle('active', tag === 'Other');
+    }
+
+    function saveNewCustomerAddress() {
+      const area = document.getElementById('addrAreaInput').value.trim();
+      const details = document.getElementById('addrDetailsInput').value.trim();
+      const receiverName = document.getElementById('addrReceiverName').value.trim();
+      const receiverPhone = document.getElementById('addrReceiverPhone').value.trim();
+
+      if (!area || !details || !receiverName || !/^[6-9]\d{9}$/.test(receiverPhone)) {
+        alert('Please fill Area, Address Details, Receiver Name, and a valid 10-digit Mobile Number.');
+        return;
+      }
+
+      const list = getSavedAddresses();
+      const newAddr = {
+        id: 'addr_' + Date.now(),
+        tag: selectedAddressTag,
+        area,
+        details,
+        receiverName,
+        receiverPhone,
+        lat: tempPinLat,
+        lng: tempPinLng
+      };
+
+      list.unshift(newAddr);
+      localStorage.setItem(STORAGE_KEYS.ADDRESSES, JSON.stringify(list));
+      localStorage.setItem(STORAGE_KEYS.ACTIVE_ADDR_ID, newAddr.id);
+
+      document.getElementById('addrDetailsInput').value = '';
+      closeAddAddressModal();
+      renderTopLocationBar();
+      renderShopStatusAndGeofenceBanners();
+
+      if (document.getElementById('checkoutModal').classList.contains('open')) {
+        renderCheckoutDrawerContents();
+      }
+    }
+
+    function getAllOrders() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEYS.ORDERS);
+        return raw ? JSON.parse(raw) : [];
+      } catch (e) {
+        return [];
+      }
+    }
+
+    function isFakeOrDuplicateUTR(utr) {
+      if (!/^[0-9]{12}$/.test(utr)) {
+        return 'UTR must be strictly 12 numeric digits.';
+      }
+      if (/^(\d)\1{11}$/.test(utr)) {
+        return 'Invalid UTR: Repeating identical digits are not allowed.';
+      }
+      const sequences = ['123456789012', '012345678901', '987654321098', '123456123456'];
+      if (sequences.includes(utr)) {
+        return 'Invalid UTR: Sequential dummy numbers are rejected.';
+      }
+      const existingOrders = getAllOrders();
+      if (existingOrders.some(o => String(o.utr) === utr)) {
+        return 'This 12-digit UTR has already been used in a previous order.';
+      }
+      return null;
+    }
+
+    function validateUTRInput() {
+      const input = document.getElementById('utrInput');
+      const errEl = document.getElementById('utrErrorMsg');
+      const btn = document.getElementById('placeOrderBtn');
+
+      const cleaned = input.value.replace(/\D/g, '').slice(0, 12);
+      if (input.value !== cleaned) input.value = cleaned;
+
+      const activeAddr = getActiveAddress();
+      if (!isShopCurrentlyOpen()) {
+        errEl.style.display = 'block';
+        errEl.textContent = `Shop is currently closed. Opens at ${shopSettings.openingTime}.`;
+        btn.disabled = true;
+        return false;
+      }
+
+      if (!activeAddr) {
+        errEl.style.display = 'block';
+        errEl.textContent = 'Please select or add a delivery address above.';
+        btn.disabled = true;
+        return false;
+      }
+
+      if (!isAddressWithinRadius(activeAddr)) {
+        errEl.style.display = 'block';
+        errEl.textContent = `Sorry, delivery is currently available only within ${shopSettings.maxDeliveryRadiusKm} km.`;
+        btn.disabled = true;
+        return false;
+      }
+
+      if (!cleaned) {
+        errEl.style.display = 'none';
+        btn.disabled = true;
+        return false;
+      }
+
+      const validationError = isFakeOrDuplicateUTR(cleaned);
+      if (validationError) {
+        errEl.style.display = 'block';
+        errEl.textContent = validationError;
+        btn.disabled = true;
+        return false;
+      }
+
+      errEl.style.display = 'none';
+      btn.disabled = false;
+      return true;
+    }
+
+    function triggerRazorpayCheckout(grandTotal) {
+      if (!shopSettings.razorpayEnabled || !shopSettings.razorpayKeyId) return;
+      alert(`Razorpay Gateway initialized for ₹${grandTotal}`);
+    }
+
+    function submitCustomerOrder() {
+      if (!validateUTRInput()) return;
+
+      const activeAddr = getActiveAddress();
+      const utr = document.getElementById('utrInput').value.trim();
+      const cookingNote = document.getElementById('cookingInstructionsInput').value.trim();
+
+      const orderedItems = Object.entries(cart).map(([id, qty]) => {
+        const item = menuCatalog.find(i => i.id === id);
+        return {
+          id: item.id,
+          name: item.name,
+          qty,
+          price: item.sellingPrice
+        };
+      });
+
+      const newOrder = {
+        orderId: 'RFD-' + Math.floor(100000 + Math.random() * 900000),
+        timestamp: new Date().toLocaleString('en-IN', {
+          day: '2-digit',
+          month: 'short',
+          year: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit',
+          hour12: true
+        }),
+        status: 'Order Placed - Preparing',
+        isFresh: true,
+        items: orderedItems,
+        cookingNote: cookingNote || 'None',
+        address: `${activeAddr.tag}: ${activeAddr.details}, ${activeAddr.area} (${activeAddr.receiverName} - ${activeAddr.receiverPhone})`,
+        grandTotal: currentGrandTotal,
+        utr
+      };
+
+      const orders = getAllOrders();
+      orders.unshift(newOrder);
+      localStorage.setItem(STORAGE_KEYS.ORDERS, JSON.stringify(orders));
+
+      if (syncChannel) {
+        syncChannel.postMessage({
+          type: 'NEW_ORDER_ALERT',
+          playBellSound: true,
+          order: newOrder
+        });
+      }
+      localStorage.setItem('ravulamma_last_order_bell_ping', JSON.stringify({
+        orderId: newOrder.orderId,
+        pingAt: Date.now()
+      }));
+
+      cart = {};
+      document.getElementById('utrInput').value = '';
+      document.getElementById('cookingInstructionsInput').value = '';
+      closeCheckoutModal();
+      renderMenuCards();
+      updateCartUI();
+      switchTab('HISTORY');
+    }
+
+    function seed30PastDeliveredOrdersIfEmpty() {
+      const existing = getAllOrders();
+      if (existing.length >= 30) return;
+
+      const sampleCombos = [
+        [{ id: 'b15', name: 'Chicken Dum Biryani', qty: 1, price: 180 }, { id: 't2', name: 'Idli', qty: 1, price: 40 }],
+        [{ id: 'b16', name: 'Chicken Fry Biryani', qty: 1, price: 190 }, { id: 't3', name: 'Egg Dosa', qty: 1, price: 60 }],
+        [{ id: 't8', name: 'Onion Dosa', qty: 2, price: 50 }, { id: 't2', name: 'Idli', qty: 1, price: 40 }],
+        [{ id: 't3', name: 'Egg Dosa', qty: 2, price: 60 }, { id: 't14', name: 'Double Egg Omelette', qty: 1, price: 40 }],
+        [{ id: 't6', name: 'Onion Pesarattu', qty: 2, price: 60 }],
+        [{ id: 't12', name: 'Egg Parotta', qty: 2, price: 80 }],
+        [{ id: 't9', name: 'Karam Dosa', qty: 2, price: 50 }, { id: 't1', name: 'Appalu', qty: 1, price: 40 }],
+        [{ id: 't4', name: 'Parotta', qty: 2, price: 60 }, { id: 't5', name: 'Chapathi', qty: 1, price: 50 }]
+      ];
+
+      const areas = ['RR Pet, Eluru', 'Powerpet, Eluru', 'Ashok Nagar, Eluru', 'Narasimharaopeta, Eluru', 'Tangellamudi, Eluru'];
+      const seeded = [];
+
+      for (let i = 1; i <= 30; i++) {
+        const combo = sampleCombos[i % sampleCombos.length];
+        const itemSum = combo.reduce((acc, it) => acc + it.price * it.qty, 0);
+        const pastDate = new Date(Date.now() - i * 3600 * 1000 * 9);
+        const dateStr = pastDate.toLocaleString('en-IN', {
+          day: '2-digit',
+          month: 'short',
+          year: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit',
+          hour12: true
+        });
+
+        seeded.push({
+          orderId: `RFD-${309400 + i}`,
+          timestamp: dateStr,
+          status: 'Delivered',
+          isFresh: false,
+          items: combo,
+          cookingNote: 'Serve hot with extra chutney',
+          address: `Home: ${areas[i % areas.length]}`,
+          grandTotal: itemSum + 20,
+          utr: String(418290345600 + i * 73)
+        });
+      }
+
+      localStorage.setItem(STORAGE_KEYS.ORDERS, JSON.stringify(seeded));
+    }
+
+    function renderOrderHistory() {
+      const orders = getAllOrders();
+      const freshOrders = orders.filter(o => o.isFresh && o.status !== 'Delivered');
+      const pastOrders = orders.filter(o => !o.isFresh || o.status === 'Delivered');
+
+      const freshEl = document.getElementById('freshOrdersContainer');
+      const pastEl = document.getElementById('pastOrdersContainer');
+
+      if (freshOrders.length > 0) {
+        freshEl.innerHTML = `
+          <div class="section-label">ACTIVE / FRESH ORDERS</div>
+          ${freshOrders.map(o => buildOrderCardHtml(o, true)).join('')}
+        `;
+      } else {
+        freshEl.innerHTML = '';
+      }
+
+      pastEl.innerHTML = pastOrders.map(o => buildOrderCardHtml(o, false)).join('');
+    }
+
+    function buildOrderCardHtml(order, isFreshCard) {
+      const itemsText = order.items.map(i => `${i.qty}x ${i.name}`).join(', ');
+      return `
+        <div class="order-card ${isFreshCard ? 'fresh' : ''}">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+            <span style="font-size:13px; font-weight:800;">Order #${order.orderId}</span>
+            ${
+              isFreshCard
+                ? `<span class="order-badge-preparing">⏳ ${order.status}</span>`
+                : `<span class="order-badge-delivered">✅ Delivered</span>`
+            }
+          </div>
+          <div style="font-size:11.5px; color:var(--text-muted); margin-bottom:6px;">
+            ${order.timestamp} | UTR: <strong>${order.utr}</strong>
+          </div>
+          <div style="font-size:13.5px; font-weight:700; margin-bottom:4px;">
+            ${itemsText}
+          </div>
+          ${
+            order.cookingNote && order.cookingNote !== 'None'
+              ? `<div style="font-size:11.5px; color:#B71C1C; margin-bottom:4px;">Note: "${order.cookingNote}"</div>`
+              : ''
+          }
+          <div style="font-size:12px; color:var(--text-muted); margin-bottom:8px;">
+            📍 ${order.address}
+          </div>
+          <div style="display:flex; justify-content:space-between; align-items:center; border-top:1px dashed var(--border-light); padding-top:8px;">
+            <span style="font-size:14px; font-weight:800;">Total Paid: ₹${order.grandTotal}</span>
+            <button class="reorder-btn" onclick='reorderPastItems(${JSON.stringify(order.items)})'>Reorder</button>
+          </div>
+        </div>
+      `;
+    }
+
+    function reorderPastItems(items) {
+      cart = {};
+      items.forEach(it => {
+        const catalogItem = menuCatalog.find(m => m.id === it.id || m.name === it.name);
+        if (catalogItem && catalogItem.inStock) {
+          cart[catalogItem.id] = it.qty;
+        }
+      });
+      renderMenuCards();
+      updateCartUI();
+      switchTab('MENU');
+    }
+
+    function switchTab(tab) {
+      const isMenu = tab === 'MENU';
+      document.getElementById('menuScreen').style.display = isMenu ? 'block' : 'none';
+      document.getElementById('historyScreen').style.display = isMenu ? 'none' : 'block';
+      document.getElementById('navMenuBtn').classList.toggle('active', isMenu);
+      document.getElementById('navHistoryBtn').classList.toggle('active', !isMenu);
+      if (!isMenu) {
+        renderOrderHistory();
+      }
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      seed30PastDeliveredOrdersIfEmpty();
+      renderTopLocationBar();
+      renderShopStatusAndGeofenceBanners();
+      renderMenuCards();
+      updateCartUI();
+      renderOrderHistory();
+    });
+  </script>
+</body>
+</html>
